@@ -1,0 +1,64 @@
+1)下载Kubeadm & Kubelet & kubectl
+apt-get update && apt-get install -y apt-transport-https
+curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add - 
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
+EOF  
+apt-get update
+apt-get install -y kubelet kubeadm kubectl
+
+
+2)关闭swap
+如果不关闭kubernetes运行会出现错误， 即使安装成功了，node重启后也会出现kubernetes server运行错误。
+sudo swapoff -a #暂时关闭，永久关闭可以上网查询
+
+3)获取镜像列表
+kubeadm config images list
+
+k8s.gcr.io/kube-apiserver:v1.17.3
+k8s.gcr.io/kube-controller-manager:v1.17.3
+k8s.gcr.io/kube-scheduler:v1.17.3
+k8s.gcr.io/kube-proxy:v1.17.3
+k8s.gcr.io/pause:3.1
+k8s.gcr.io/etcd:3.4.3-0
+k8s.gcr.io/coredns:1.6.5
+
+kubeadm config images pull
+4)初始化环境
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+
+5)配置授权信息
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+6)添加网络插件
+#sudo sysctl net.bridge.bridge-nf-call-iptables=1
+#kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+7)单节点，设置master节点也可以运行Pod
+kubectl taint nodes --all node-role.kubernetes.io/master-
+
+8)
+kubectl get pods -n kube-system
+
+
+
+    sudo -i
+    swapoff -a
+    exit
+    strace -eopenat kubectl version
+
+初始化 Kubernetes 问题（端口占用）
+kubeadm reset 
+
+kubeadm join 192.168.0.108:6443 --token w5fepg.0zta7334iumb5szs \
+    --discovery-token-ca-cert-hash sha256:abd466a6460c77b6be6bce725c28dcf27fe5779f318b3da49c4d8380ed8cbd2d 
+
+Helm:
+1)curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+2)kubectl --namespace kube-system create serviceaccount tiller
+3)kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+4)helm init --service-account tiller 
+5)kubectl patch deployment tiller-deploy --namespace=kube-system --type=json --patch='[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/tiller", "--listen=localhost:44134"]}]'
+6)helm version
