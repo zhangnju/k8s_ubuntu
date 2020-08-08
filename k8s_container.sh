@@ -3,13 +3,13 @@
 echo "Downloading K8S docker"
 
 images=(  # 下面的镜像应该去除"k8s.gcr.io/"的前缀，版本换成上面获取到的版本
-     kube-apiserver:v1.17.9
-     kube-controller-manager:v1.17.9
-     kube-scheduler:v1.17.9
-     kube-proxy:v1.17.9
+     kube-apiserver:v1.16.3
+     kube-controller-manager:v1.16.3
+     kube-scheduler:v1.16.3
+     kube-proxy:v1.16.3
      pause:3.1
-     etcd:3.4.3-0
-     coredns:1.6.5
+     etcd:3.3.15-0
+     coredns:1.6.2
 )
 
 for imageName in ${images[@]} ; do
